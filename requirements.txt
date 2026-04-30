@@ -1,6 +1,6 @@
 gradio
 torch
-torchaudio
 transformers
+scipy
 numpy
 spaces
