@@ -1,16 +1,40 @@
-# This is a sample Python script.
+import gradio as gr
+import torch
+from transformers import MusicgenForConditionalGeneration, AutoProcessor
+import spaces  # Ова е клучно за Zero-GPU!
 
-# Press Shift+F10 to execute it or replace it with your code.
-# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
+# Вчитување на моделот (Large верзија)
+model_id = "facebook/musicgen-large"
+processor = AutoProcessor.from_pretrained(model_id)
+model = MusicgenForConditionalGeneration.from_pretrained(model_id)
 
 
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press Ctrl+F8 to toggle the breakpoint.
+# Функција која ќе ја користи графичката картичка
+@spaces.GPU(duration=60)  # Му даваме 60 секунди GPU време по генерирање
+def generate_music(prompt):
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    model.to(device)
+
+    inputs = processor(
+        text=[prompt],
+        padding=True,
+        return_tensors="pt",
+    ).to(device)
+
+    audio_values = model.generate(**inputs, max_new_tokens=512)  # Генерира околу 10-15 сек
+
+    # Конвертирање во аудио формат
+    sampling_rate = model.config.audio_encoder.sampling_rate
+    return (sampling_rate, audio_values[0, 0].cpu().numpy())
 
 
-# Press the green button in the gutter to run the script.
-if __name__ == '__main__':
-    print_hi('PyCharm')
+# Gradio Интерфејс
+with gr.Blocks() as demo:
+    gr.Markdown("# LATIVM MusicGen Large (Zero-GPU)")
+    input_text = gr.Textbox(label="Опиши ја музиката")
+    output_audio = gr.Audio(label="Генерирано аудио")
+    btn = gr.Button("Генерирај")
 
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+    btn.click(fn=generate_music, inputs=input_text, outputs=output_audio)
+
+demo.launch()

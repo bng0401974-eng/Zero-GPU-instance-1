@@ -1,8 +1,8 @@
 ﻿---
-title: MusicGen-large-music-facebook
-emoji: 🎵
+title: MusicGen-Large-ZeroGPU
+emoji: 🎸
 colorFrom: blue
-colorTo: purple
+colorTo: red
 sdk: gradio
 app_file: app.py
 pinned: false
